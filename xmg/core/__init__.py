@@ -1,0 +1,2 @@
+# XMG-KB Core Module
+
