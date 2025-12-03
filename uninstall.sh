@@ -5,7 +5,7 @@
 
 set -e
 
-
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -36,13 +36,21 @@ fi
 
 echo ""
 
-# Stop and remove systemd service
-echo -e "${CYAN}⚙ Removing systemd service...${NC}"
+# Stop and remove systemd services and timer
+echo -e "${CYAN}⚙ Removing systemd services...${NC}"
+systemctl stop xmg-kb-refresh.timer 2>/dev/null || true
+systemctl disable xmg-kb-refresh.timer 2>/dev/null || true
+systemctl stop xmg-kb-refresh.service 2>/dev/null || true
+systemctl stop xmg-kb-resume.service 2>/dev/null || true
+systemctl disable xmg-kb-resume.service 2>/dev/null || true
 systemctl stop xmg-kb.service 2>/dev/null || true
 systemctl disable xmg-kb.service 2>/dev/null || true
 rm -f /etc/systemd/system/xmg-kb.service
+rm -f /etc/systemd/system/xmg-kb-refresh.service
+rm -f /etc/systemd/system/xmg-kb-refresh.timer
+rm -f /etc/systemd/system/xmg-kb-resume.service
 systemctl daemon-reload
-echo -e "${GREEN}✓ Service removed${NC}"
+echo -e "${GREEN}✓ Services and timer removed${NC}"
 
 # Remove udev rule
 echo -e "${CYAN}🔧 Removing udev rule...${NC}"

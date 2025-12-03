@@ -167,20 +167,33 @@ sudo xmg-kb --status
 
 After installation, the keyboard backlight automatically starts with your last used settings.
 
-### Manage Service
+### Installed Services
+
+| Service | Description |
+|---------|-------------|
+| `xmg-kb.service` | Restores RGB settings on boot |
+| `xmg-kb-refresh.timer` | Re-applies RGB every 2 minutes (prevents EC reset) |
+| `xmg-kb-resume.service` | Restores RGB after suspend/hibernate |
+
+### Manage Services
 
 ```bash
-# Show status
+# Show boot service status
 sudo systemctl status xmg-kb
 
-# Manually restart
-sudo systemctl restart xmg-kb
+# Show refresh timer status
+sudo systemctl list-timers xmg-kb*
 
-# Disable autostart
-sudo systemctl disable xmg-kb
+# View logs
+sudo journalctl -u xmg-kb-refresh.service --since "1 hour ago"
 
-# Enable autostart
-sudo systemctl enable xmg-kb
+# Disable 2-minute refresh (if not needed)
+sudo systemctl disable xmg-kb-refresh.timer
+
+# Disable autostart completely
+sudo systemctl disable xmg-kb.service
+sudo systemctl disable xmg-kb-refresh.timer
+sudo systemctl disable xmg-kb-resume.service
 ```
 
 ### Where Are Settings Stored?
@@ -298,17 +311,30 @@ ls -la /etc/xmg-kb/
 xmg-kb/
 ├── xmg/
 │   ├── __init__.py
-│   ├── main.py          # Main program
+│   ├── main.py              # Main program
 │   └── core/
-│       ├── colors.py    # Color definitions
-│       └── handler.py   # USB controller
-├── install.sh           # Installer
-├── uninstall.sh         # Uninstaller
-├── xmg-kb.service       # systemd service
+│       ├── colors.py        # Color definitions
+│       └── handler.py       # USB controller
+├── install.sh               # Installer
+├── uninstall.sh             # Uninstaller
+├── xmg-kb.service           # systemd boot service
+├── xmg-kb-refresh.service   # Refresh service (called by timer)
+├── xmg-kb-refresh.timer     # 2-minute refresh timer
+├── xmg-kb-resume.service    # Suspend/resume service
 ├── setup.py
 ├── requirements.txt
 └── README.md
 ```
+
+---
+
+## 📝 Changelog
+
+### v2.1.1
+- **Fix:** RGB lighting turned off after a few minutes (notebook EC resets RGB settings)
+  - New timer service: Settings are automatically re-applied every 2 minutes
+  - New resume service: Settings are restored after suspend/hibernate
+  - Extended udev rule: USB autosuspend disabled for the keyboard
 
 ---
 

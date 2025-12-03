@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # XMG-KB - RGB Keyboard Controller
-# Version: 2.0.5
+# Version: 2.1.1
 # Author: Gerald Hasani
 # Email: contact@gerald-hasani.com
 # GitHub: https://github.com/Gerald-Ha
@@ -16,7 +16,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='xmg-kb',
-    version='2.0.5',
+    version='2.1.1',
     description='XMG Keyboard - RGB Controller für ITE 8291 Tastaturen',
     long_description=long_description,
     long_description_content_type='text/markdown',

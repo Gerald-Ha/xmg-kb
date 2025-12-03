@@ -1,0 +1,15 @@
+[Unit]
+Description=Periodically refresh XMG Keyboard RGB settings
+After=multi-user.target
+
+[Timer]
+# Start 1 minute after boot
+OnBootSec=1min
+# Then repeat every 2 minutes (notebook EC may reset RGB quickly)
+OnUnitActiveSec=2min
+# Run immediately if a scheduled run was missed
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+

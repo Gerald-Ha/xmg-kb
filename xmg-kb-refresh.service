@@ -1,0 +1,8 @@
+[Unit]
+Description=XMG Keyboard RGB Refresh
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/xmg-kb --restore
+

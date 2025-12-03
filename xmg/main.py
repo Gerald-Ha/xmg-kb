@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # XMG-KB - RGB Keyboard Controller
-# Version: 2.1.0
+# Version: 2.1.1
 # Author: Gerald Hasani
 # Email: contact@gerald-hasani.com
 # GitHub: https://github.com/Gerald-Ha
@@ -21,22 +21,15 @@ from xmg.core.colors import (
     get_v_alt_color_vector
 )
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Configuration
-# ══════════════════════════════════════════════════════════════════════════════
-
 CONFIG_DIR = "/etc/xmg-kb"
 CONFIG_FILE = f"{CONFIG_DIR}/config.json"
 
-# Brightness levels (1-4)
 BRIGHTNESS_LEVELS = {
     1: 0x08,
     2: 0x16,
     3: 0x24,
     4: 0x32
 }
-
 
 EFFECTS = {
     "breathing":      0x02,
@@ -53,40 +46,33 @@ EFFECTS = {
     "fireworks":      0x11,
 }
 
-# Color codes for effects (hardware limitation: only 7 colors + rainbow)
 EFFECT_COLOR_CODES = {
-    "r": 0x01,  # Red
-    "o": 0x02,  # Orange
-    "y": 0x03,  # Yellow
-    "g": 0x04,  # Green/Lime
-    "t": 0x05,  # Teal/Cyan
-    "b": 0x06,  # Blue
-    "p": 0x07,  # Purple
-    # 0x08 = Rainbow
-    "k": 0x09,  # Pink
-    "v": 0x0E,  # Violet
-
+    "r": 0x01,
+    "o": 0x02,
+    "y": 0x03,
+    "g": 0x04,
+    "t": 0x05,
+    "b": 0x06,
+    "p": 0x07,
+    "k": 0x09,
+    "v": 0x0E,
 }
-
 
 EFFECTS_WITH_COLORS = [
     'breathing', 'raindrop', 'aurora', 'random', 'reactive',
     'ripple', 'reactiveripple', 'reactiveaurora', 'fireworks'
 ]
 
-
 EFFECTS_NO_COLORS = ['rainbow', 'wave', 'marquee']
 
-
 COLORS_NO_EFFECT_SUPPORT = [
-    'red',       
-    'white',     
+    'red',
+    'white',
     'turquoise',
-    'coral',     
-    'salmon',    
+    'lavender',
+    'coral',
+    'salmon',
 ]
-
-
 
 COLOR_TO_EFFECT_CODE = {
     'red': 'r',
@@ -101,21 +87,16 @@ COLOR_TO_EFFECT_CODE = {
     'magenta': 'p',
     'violet': 'v',
     'pink': 'k',
-    'hotpink': 'k',   
-    'lavender': 'v',  
+    'hotpink': 'k',
+    'lavender': 'v',
     'coral': 'o',
     'salmon': 'o',
     'white': '',
-    'rainbow': '',    
+    'rainbow': '',
 }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Config Management (Save/Load settings)
-# ══════════════════════════════════════════════════════════════════════════════
-
 def save_config(config):
-    """Saves the current configuration"""
     try:
         os.makedirs(CONFIG_DIR, exist_ok=True)
         with open(CONFIG_FILE, 'w') as f:
@@ -127,7 +108,6 @@ def save_config(config):
 
 
 def load_config():
-    """Loads the saved configuration"""
     try:
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, 'r') as f:
@@ -138,7 +118,6 @@ def load_config():
 
 
 def apply_config(keyboard, config):
-    """Applies a saved configuration"""
     if not config:
         return False
     
@@ -171,12 +150,7 @@ def apply_config(keyboard, config):
         return False
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Terminal Colors
-# ══════════════════════════════════════════════════════════════════════════════
-
 class Term:
-    """ANSI Terminal Colors"""
     CYAN = '\033[96m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
@@ -189,10 +163,6 @@ class Term:
     RESET = '\033[0m'
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Effect Control
-# ══════════════════════════════════════════════════════════════════════════════
-
 _effect_pattern = re.compile(
     "^({})({})?$".format(
         '|'.join(EFFECTS.keys()),
@@ -202,7 +172,6 @@ _effect_pattern = re.compile(
 
 
 def build_effect_command(effect_name, brightness=3, speed=0x05):
-    """Builds the command code for an effect"""
     match = _effect_pattern.match(effect_name)
     
     if not match:
@@ -227,69 +196,49 @@ def build_effect_command(effect_name, brightness=3, speed=0x05):
     return (0x08, 0x02, effect_code, speed, brightness_code, color, extra, 0x00)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Keyboard Controller Class
-# ══════════════════════════════════════════════════════════════════════════════
-
 class XMGKeyboard(KeyboardController):
-    """Main class for XMG keyboard control"""
-    
     def __init__(self, vendor_id=0x048d, product_id=0x600b):
         super().__init__(vendor_id, product_id)
         self._brightness = None
 
     def turn_off(self):
-        """Turns off the keyboard backlight"""
         self.ctrl_write(0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
 
     def set_effect(self, effect_name, brightness=3, speed=5):
-        """Activates a light effect"""
         self.ctrl_write(*build_effect_command(effect_name, brightness, speed=speed))
 
     def set_brightness(self, level=4):
-        """Sets the brightness (1-4)"""
         self._brightness = level
         self.ctrl_write(0x08, 0x02, 0x33, 0x00, BRIGHTNESS_LEVELS[level], 0x00, 0x00, 0x00)
 
     def _prepare_color_change(self, save=0x01):
-        """Prepares color change"""
         self.ctrl_write(0x12, 0x00, 0x00, 0x08, save, 0x00, 0x00, 0x00)
 
     def set_color(self, color):
-        """Sets a single color for all keys"""
         if not self._brightness:
             self.set_brightness(4)
         self._prepare_color_change()
         self.bulk_write(times=8, payload=get_mono_color_vector(color))
 
     def set_h_colors(self, color_a, color_b):
-        """Sets horizontally alternating colors"""
         if not self._brightness:
             self.set_brightness(4)
         self._prepare_color_change()
         self.bulk_write(times=8, payload=get_h_alt_color_vector(color_a, color_b))
 
     def set_v_colors(self, color_a, color_b):
-        """Sets vertically alternating colors"""
         if not self._brightness:
             self.set_brightness(4)
         self._prepare_color_change()
         self.bulk_write(times=8, payload=get_v_alt_color_vector(color_a, color_b))
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Auto Test Function
-# ══════════════════════════════════════════════════════════════════════════════
-
 def run_auto_test(keyboard):
-    """Tests all untested hardware color codes automatically"""
     import time
-    
     
     known_codes = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0E]
     tested_ranges = list(range(0x00, 0x21)) + [0x29, 0x2E, 0x39, 0x3E, 0x40, 0x80, 0xC0, 0xFF]
     
-   
     test_codes = []
     for code in range(0x21, 0x80):
         if code not in tested_ranges:
@@ -307,14 +256,12 @@ def run_auto_test(keyboard):
     
     input(f"{Term.GREEN}Press Enter to start...{Term.RESET}")
     
-   
     keyboard.set_brightness(4)
     
     for code in test_codes:
         print(f"\n{Term.CYAN}{'─' * 50}{Term.RESET}")
         print(f"{Term.BOLD}Testing: 0x{code:02X} (decimal: {code}){Term.RESET}")
         print(f"{Term.CYAN}{'─' * 50}{Term.RESET}")
-        
         
         try:
             effect_code = EFFECTS['breathing']
@@ -327,20 +274,12 @@ def run_auto_test(keyboard):
         if user_input == 'q':
             break
     
-    
     keyboard.turn_off()
     print(f"\n{Term.GREEN}✓ Test completed!{Term.RESET}")
     print(f"{Term.DIM}If you found new colors, let me know the codes!{Term.RESET}\n")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Interactive Menu
-# ══════════════════════════════════════════════════════════════════════════════
-
 def show_menu(keyboard):
-    """Shows the interactive selection menu"""
-    
-    # Header
     print(f"\n{Term.CYAN}{Term.BOLD}╔════════════════════════════════════════════════════════════╗{Term.RESET}")
     print(f"{Term.CYAN}{Term.BOLD}║                                                            ║{Term.RESET}")
     print(f"{Term.CYAN}{Term.BOLD}║            {Term.WHITE}XMG KEYBOARD RGB CONTROL{Term.CYAN}                        ║{Term.RESET}")
@@ -352,9 +291,6 @@ def show_menu(keyboard):
     print(f"   {Term.DIM}Type:{Term.RESET} {Term.YELLOW}sudo xmg-kb -c cyan -b 4{Term.RESET} {Term.DIM}for cyan with max brightness{Term.RESET}")
     print(f"   {Term.DIM}Type:{Term.RESET} {Term.YELLOW}sudo xmg-kb -s rainbow -b 4{Term.RESET} {Term.DIM}for rainbow effect{Term.RESET}")
     
-    # ══════════════════════════════════════════════════════════════
-    # STEP 1: COLOR
-    # ══════════════════════════════════════════════════════════════
     print(f"\n{Term.MAGENTA}{'═' * 64}{Term.RESET}")
     print(f"{Term.MAGENTA}  STEP 1: Choose a color{Term.RESET}")
     print(f"{Term.MAGENTA}{'═' * 64}{Term.RESET}")
@@ -401,9 +337,6 @@ def show_menu(keyboard):
         
         print(f"{Term.GREEN}   ✓ Color: {selected_color}{Term.RESET}")
         
-        # ══════════════════════════════════════════════════════════════
-        # SPECIAL COMBOS: Handle horizontal/vertical color combos
-        # ══════════════════════════════════════════════════════════════
         if selected_color == 'h-pink-cyan':
             print(f"\n{Term.YELLOW}⚠ Special combo - horizontal pink/cyan{Term.RESET}")
             
@@ -448,9 +381,6 @@ def show_menu(keyboard):
             print(f"{Term.DIM}💾 Settings saved (will be restored on reboot){Term.RESET}\n")
             return config
         
-        # ══════════════════════════════════════════════════════════════
-        # COLORS WITHOUT EFFECT SUPPORT: Skip effect selection
-        # ══════════════════════════════════════════════════════════════
         elif selected_color in COLORS_NO_EFFECT_SUPPORT:
             print(f"\n{Term.YELLOW}⚠ '{selected_color}' shows wrong colors with effects - skipping effect selection{Term.RESET}")
             selected_effect = None
@@ -466,14 +396,10 @@ def show_menu(keyboard):
             brightness = max(1, min(4, brightness))
             print(f"{Term.GREEN}   ✓ Brightness: {brightness}{Term.RESET}")
         
-        # ══════════════════════════════════════════════════════════════
-        # STEP 2: EFFECT (for colors that support effects)
-        # ══════════════════════════════════════════════════════════════
         else:
             print(f"\n{Term.BLUE}{'═' * 64}{Term.RESET}")
             print(f"{Term.BLUE}  STEP 2: Choose an effect (optional){Term.RESET}")
             print(f"{Term.BLUE}{'═' * 64}{Term.RESET}")
-            
             
             color_available_for_effects = COLOR_TO_EFFECT_CODE.get(selected_color, '') != ''
             if not color_available_for_effects:
@@ -489,7 +415,7 @@ def show_menu(keyboard):
             effect_choice = input(f"\n{Term.CYAN}➤ Choose effect (0-{len(effect_list)}, Enter = 0): {Term.RESET}").strip().lower()
             
             selected_effect = None
-            speed = 5  
+            speed = 5  # Default speed
             
             if effect_choice in ('', '0'):
                 print(f"{Term.GREEN}   ✓ No effect (static color){Term.RESET}")
@@ -502,9 +428,6 @@ def show_menu(keyboard):
                 selected_effect = effect_choice
                 print(f"{Term.GREEN}   ✓ Effect: {selected_effect}{Term.RESET}")
             
-            # ══════════════════════════════════════════════════════════════
-            # STEP 3: SPEED (only if effect selected)
-            # ══════════════════════════════════════════════════════════════
             if selected_effect:
                 print(f"\n{Term.MAGENTA}{'═' * 64}{Term.RESET}")
                 print(f"{Term.MAGENTA}  STEP 3: Choose speed{Term.RESET}")
@@ -516,9 +439,6 @@ def show_menu(keyboard):
                 speed = max(1, min(10, speed))
                 print(f"{Term.GREEN}   ✓ Speed: {speed}{Term.RESET}")
             
-            # ══════════════════════════════════════════════════════════════
-            # STEP 4: BRIGHTNESS
-            # ══════════════════════════════════════════════════════════════
             print(f"\n{Term.YELLOW}{'═' * 64}{Term.RESET}")
             step_num = "4" if selected_effect else "3"
             print(f"{Term.YELLOW}  STEP {step_num}: Choose brightness{Term.RESET}")
@@ -530,9 +450,6 @@ def show_menu(keyboard):
             brightness = max(1, min(4, brightness))
             print(f"{Term.GREEN}   ✓ Brightness: {brightness}{Term.RESET}")
         
-        # ══════════════════════════════════════════════════════════════
-        # EXECUTION
-        # ══════════════════════════════════════════════════════════════
         print(f"\n{Term.DIM}{'─' * 64}{Term.RESET}")
         
         config = {'brightness': brightness}
@@ -550,7 +467,6 @@ def show_menu(keyboard):
                 if effect_code:
                     color_info = f" in '{selected_color}'"
                 else:
-                    
                     color_info = f" ('{selected_color}' not available for effects, using rainbow)"
             else:
                 full_effect = selected_effect
@@ -576,18 +492,12 @@ def show_menu(keyboard):
         return None
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Main Program
-# ══════════════════════════════════════════════════════════════════════════════
-
 def main():
     from elevate import elevate
     
-    # Request for root privileges 
     if '--help' not in sys.argv and '-h' not in sys.argv:
         if os.geteuid() != 0:
             elevate()
-    
     
     parser = argparse.ArgumentParser(
         prog='xmg-kb',
@@ -621,7 +531,6 @@ def main():
     
     args = parser.parse_args()
     
-    # Show status
     if args.status:
         config = load_config()
         if config:
@@ -630,13 +539,11 @@ def main():
             print("No configuration saved.")
         return
     
-    
     try:
         keyboard = XMGKeyboard()
     except Exception as e:
         print(f"Error: Keyboard not found! ({e})")
         sys.exit(1)
-    
     
     if args.restore:
         config = load_config()
@@ -649,11 +556,9 @@ def main():
             print("No saved configuration found.")
         return
     
-    
     if len(sys.argv) == 1:
         show_menu(keyboard)
         return
-    
     
     config = {}
     
@@ -683,7 +588,6 @@ def main():
             print("Run 'xmg-kb' without arguments for the interactive menu.")
             return
     
-    # Save configuration
     if config:
         save_config(config)
 
